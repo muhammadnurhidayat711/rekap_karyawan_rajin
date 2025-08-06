@@ -2,10 +2,9 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-
 st.title("📋 Rekapan Karyawan Rajin")
 
-uploaded_file = st.file_uploader("Upload file absensi Excel (.xlsx / .xls)", type=["xlsx", "xls"])
+uploaded_file = st.file_uploader("Upload file absensi Excel (.xlsx/.xls)", type=["xlsx", "xls"])
 
 if uploaded_file:
     # Baca Excel, header di baris kedua (index 1)
@@ -18,7 +17,7 @@ if uploaded_file:
     # Hapus baris kosong
     df.dropna(how='all', inplace=True)
 
-    # Bersihkan nama kolom: spasi jadi underscore + snake_case
+    # Bersihkan nama kolom: spasi jadi underscore dan huruf kecil
     df.columns = df.columns.str.strip().str.replace(r'\s+', '_', regex=True).str.lower()
 
     # Tampilkan data awal
@@ -36,7 +35,7 @@ if uploaded_file:
         no_telat = pd.isna(row['terlambat']) or row['terlambat'] == 0
 
         # Cek kolom 'izin' harus kosong atau 0
-        no_izin_kolom = pd.isna(row.get('Izin_terlambat')) or row['Izin_terlambat'] == 0
+        no_izin_kolom = pd.isna(row.get('izin')) or row['izin'] == 0
 
         # Cek tidak ada kata izin di keterangan
         no_izin_keterangan = True
@@ -44,12 +43,24 @@ if uploaded_file:
             ket = str(row['keterangan']).lower()
             no_izin_keterangan = not any(k in ket for k in kata_izin)
 
-        # Cek jam_kerja tidak "tidak hadir"
+        # Cek jam_kerja tidak "Tidak hadir"
         jam_kerja_oke = True
         if pd.notna(row.get('jam_kerja')):
             jam_kerja_oke = str(row['jam_kerja']).strip().lower() != 'tidak hadir'
 
-        return no_telat and no_izin_kolom and no_izin_keterangan and jam_kerja_oke
+        # Cek scan_pulang harus ada dan tidak lebih awal dari jam_pulang
+        pulang_oke = True
+        if pd.notna(row.get('jam_pulang')) and pd.notna(row.get('scan_pulang')):
+            try:
+                jam_pulang = pd.to_datetime(str(row['jam_pulang'])).time()
+                scan_pulang = pd.to_datetime(str(row['scan_pulang'])).time()
+                pulang_oke = scan_pulang >= jam_pulang
+            except:
+                pulang_oke = False
+        else:
+            pulang_oke = False
+
+        return no_telat and no_izin_kolom and no_izin_keterangan and jam_kerja_oke and pulang_oke
 
     df['bersih'] = df.apply(bersih, axis=1)
 
@@ -92,6 +103,10 @@ if uploaded_file:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+    # Tampilkan data lengkap
+    st.subheader("📑 Detail Absensi Karyawan Rajin")
+    st.dataframe(df_rajin_detail)
+
     # Kolom yang ingin ditampilkan
     kolom_dipilih = ['tanggal', 'nama', 'jam_masuk', 'scan_masuk', 'jam_pulang', 'scan_pulang', 'departemen']
     kolom_tersedia = [kol for kol in kolom_dipilih if kol in df_rajin_detail.columns]
@@ -103,9 +118,7 @@ if uploaded_file:
     output_excel = BytesIO()
     with pd.ExcelWriter(output_excel, engine='xlsxwriter') as writer:
         df_excel.to_excel(writer, index=False, sheet_name='Detail_Rajin')
-    # Tampilkan data lengkap
-    st.subheader("📑 Detail Absensi Karyawan Rajin")
-    st.dataframe(df_rajin_detail)
+
     # Tombol download Excel
     st.download_button(
         label="⬇️ Download Detail (Excel)",
@@ -113,3 +126,4 @@ if uploaded_file:
         file_name="detail_karyawan_rajin.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+    st.success("✅ Proses selesai! Silakan cek tabel di atas.")
