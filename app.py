@@ -45,7 +45,7 @@ if uploaded_file:
 
         hadir_di_jam_kerja = True
         if pd.notna(row.get('Jam_Kerja')):
-            hadir_di_jam_kerja = 'Tidak Hadir' not in str(row['Jam_Kerja']).lower()
+            hadir_di_jam_kerja = 'Tidak Hadir' not in str(row['Jam_kerja']).lower()
 
         return no_telat and no_izin_keterangan and no_izin_kolom and hadir_di_jam_kerja
 
