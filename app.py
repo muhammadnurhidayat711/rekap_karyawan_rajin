@@ -32,13 +32,24 @@ if uploaded_file:
     hari_kerja = df.groupby('Nama').size().reset_index(name='Jumlah_Hari_Kerja')
 
     # Fungsi cek kehadiran bersih
-    def bersih(row):
-        no_telat = pd.isna(row['Terlambat']) or row['Terlambat'] == 0
-        no_izin = True
-        if pd.notna(row.get('Keterangan')):
-            ket = str(row['Keterangan']).lower()
-            no_izin = not any(k in ket for k in kata_izin)
-        return no_telat and no_izin
+    # Fungsi cek kehadiran bersih
+def bersih(row):
+    no_telat = pd.isna(row['Terlambat']) or row['Terlambat'] == 0
+
+    no_izin_kolom = pd.isna(row.get('Izin')) or row['Izin'] == 0
+
+    no_izin_keterangan = True
+    if pd.notna(row.get('Keterangan')):
+        ket = str(row['Keterangan']).lower()
+        no_izin_keterangan = not any(k in ket for k in kata_izin)
+
+    hadir_di_jam_kerja = True
+    if pd.notna(row.get('Jam_Kerja')):
+        hadir_di_jam_kerja = 'tidak hadir' not in str(row['Jam_Kerja']).lower()
+
+    return no_telat and no_izin_keterangan and no_izin_kolom and hadir_di_jam_kerja
+
+
 
     df['Bersih'] = df.apply(bersih, axis=1)
 
