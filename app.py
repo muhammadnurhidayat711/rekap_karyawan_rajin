@@ -5,7 +5,7 @@ from io import BytesIO
 
 st.title("📋 Rekapan Karyawan Rajin")
 
-uploaded_file = st.file_uploader("Upload file absensi Excel (.xlsx)", type=["xlsx"])
+uploaded_file = st.file_uploader("Upload file absensi Excel (.xlsx / .xls)", type=["xlsx", "xls"])
 
 if uploaded_file:
     # Baca Excel, header di baris kedua (index 1)
