@@ -103,7 +103,7 @@ if uploaded_file:
     output_excel = BytesIO()
     with pd.ExcelWriter(output_excel, engine='xlsxwriter') as writer:
         df_excel.to_excel(writer, index=False, sheet_name='Detail_Rajin')
-     # Tampilkan data lengkap
+    # Tampilkan data lengkap
     st.subheader("📑 Detail Absensi Karyawan Rajin")
     st.dataframe(df_rajin_detail)
     # Tombol download Excel
